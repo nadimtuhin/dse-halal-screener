@@ -42,14 +42,24 @@ def format_output(results, format_type):
 def main():
     parser = argparse.ArgumentParser(description="DSE Halal Screener")
     parser.add_argument("--pe", type=float, default=20.0)
+    parser.add_argument("--min-cf", type=float, default=0.0)
+    parser.add_argument("--mock", action="store_true", help="Use sample data instead of fetching from DSE")
     parser.add_argument("-o", "--format", choices=['json', 'table', 'yaml', 'md', 'html'], default='table')
     args = parser.parse_args()
 
-    symbols = fetch_dses_symbols()
-    stocks = [get_stock_data(sym) for sym in symbols]
-    stocks = [s for s in stocks if s]
+    if args.mock:
+        stocks = [
+            Stock(symbol="GP", sector="Telecommunication", price=41.5, debt_ratio=0.1, pe=12.29, eps=3.4, nav=25.0, cfo=5000),
+            Stock(symbol="SQURPHARMA", sector="Pharmaceuticals", price=210.0, debt_ratio=0.15, pe=10.5, eps=20.0, nav=180.0, cfo=8000),
+            Stock(symbol="BATBC", sector="Tobacco", price=520.0, debt_ratio=0.05, pe=9.5, eps=55.0, nav=450.0, cfo=12000),
+            Stock(symbol="EBL", sector="Bank", price=28.0, debt_ratio=0.8, pe=6.2, eps=4.5, nav=20.0, cfo=3000),
+        ]
+    else:
+        symbols = fetch_dses_symbols()
+        stocks = [get_stock_data(sym) for sym in symbols]
+        stocks = [s for s in stocks if s]
 
-    filtered = filter_halal(stocks)
+    filtered = filter_halal(stocks, min_cfo=args.min_cf)
     # pe <= 0 means "no P/E published" (negative/zero earnings), not "cheap" — exclude it.
     results = [s for s in filtered if 0 < s.pe <= args.pe]
 
