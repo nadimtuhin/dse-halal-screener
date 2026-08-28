@@ -47,6 +47,9 @@ def main():
     parser.add_argument("-o", "--format", choices=['json', 'table', 'yaml', 'md', 'html'], default='table')
     args = parser.parse_args()
 
+    if args.mock and args.format == 'table':
+        args.format = 'json'
+
     if args.mock:
         stocks = [
             Stock(symbol="GP", sector="Telecommunication", price=41.5, debt_ratio=0.1, pe=12.29, eps=3.4, nav=25.0, cfo=5000),
