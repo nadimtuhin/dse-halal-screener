@@ -36,7 +36,7 @@ def _fetch_html(url):
     return r.text
 
 class Stock:
-    def __init__(self, symbol, sector, price, debt_ratio, pe, eps, nav,
+    def __init__(self, symbol, sector, price=0.0, debt_ratio=0.0, pe=0.0, eps=0.0, nav=0.0,
                  dividend_yield=0.0, earnings_yield=0.0, payout_ratio=0.0,
                  cfo=0.0):
         self.symbol = symbol
