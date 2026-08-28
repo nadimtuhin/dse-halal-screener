@@ -150,7 +150,10 @@ def get_stock_data(symbol):
     except Exception:
         return None
 
-def filter_halal(stocks):
+def filter_halal(stocks, min_cfo=None):
     haram_sectors = {"Tobacco", "Bank", "Financial", "Mutual Funds"}
-    return [s for s in stocks
-            if not any(h in s.sector for h in haram_sectors) and s.debt_ratio < 0.33]
+    result = [s for s in stocks
+              if not any(h in s.sector for h in haram_sectors) and s.debt_ratio < 0.33]
+    if min_cfo is not None:
+        result = [s for s in result if s.cfo >= min_cfo]
+    return result
