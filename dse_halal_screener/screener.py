@@ -37,7 +37,8 @@ def _fetch_html(url):
 
 class Stock:
     def __init__(self, symbol, sector, price, debt_ratio, pe, eps, nav,
-                 dividend_yield=0.0, earnings_yield=0.0, payout_ratio=0.0):
+                 dividend_yield=0.0, earnings_yield=0.0, payout_ratio=0.0,
+                 cfo=0.0):
         self.symbol = symbol
         self.sector = sector
         self.price = price
@@ -48,6 +49,7 @@ class Stock:
         self.dividend_yield = dividend_yield
         self.earnings_yield = earnings_yield
         self.payout_ratio = payout_ratio
+        self.cfo = cfo
 
 def fetch_dses_symbols():
     # DSE trading codes (not company abbreviations). Verified against dsebd.org.
