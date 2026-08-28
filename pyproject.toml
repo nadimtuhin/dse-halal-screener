@@ -13,3 +13,6 @@ description = "Screen DSE stocks for halal compounding."
 readme = "README.md"
 requires-python = ">=3.7"
 license = {text = "MIT"}
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-cov", "ruff"]
