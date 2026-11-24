@@ -14,14 +14,16 @@ def format_output(results, format_type):
     elif format_type == 'yaml':
         return yaml.dump(data)
     elif format_type == 'md':
-        if not data: return "No results"
+        if not data:
+            return "No results"
         headers = data[0].keys()
         rows = [f"| {' | '.join(headers)} |", f"| {' | '.join(['---'] * len(headers))} |"]
         for d in data:
             rows.append(f"| {' | '.join(str(d[k]) for k in headers)} |")
         return '\n'.join(rows)
     elif format_type == 'html':
-        if not data: return "<p>No results</p>"
+        if not data:
+            return "<p>No results</p>"
         headers = data[0].keys()
         rows = ["<table border='1'><thead><tr>" + "".join(f"<th>{h}</th>" for h in headers) + "</tr></thead><tbody>"]
         for d in data:
@@ -29,7 +31,8 @@ def format_output(results, format_type):
         rows.append("</tbody></table>")
         return "".join(rows)
     else: # table format (plain ASCII)
-        if not data: return "No results"
+        if not data:
+            return "No results"
         headers = list(data[0].keys())
         col_widths = {h: max(len(h), max(len(str(d[h])) for d in data)) for h in headers}
         header_row = "  ".join(h.upper().ljust(col_widths[h]) for h in headers)
