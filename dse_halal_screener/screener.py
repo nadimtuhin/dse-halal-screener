@@ -109,18 +109,24 @@ def _latest_eps_nav(soup):
     return eps, nav
 
 def _debt_ratio(soup, price, shares):
-    """AAOIFI-style leverage screen: interest-bearing debt / market cap.
+    """AAOIFI leverage screen (Shariah Standard No. 21): interest-bearing debt / market cap.
 
     Loans are reported in millions; market cap is converted to the same unit.
-    Returns 0.0 when market cap is unknown (avoids a divide-by-zero false pass).
+    Returns None when the ratio can't be determined (no market cap, or no loan rows on
+    the page), so the stock fails the screen instead of passing as "zero debt".
+    A loan row that is present but shows "-" counts as zero.
     """
     text = soup.get_text(' ', strip=True)
-    short_term = re.search(r'Short-term loan \(mn\)\s*([\d,\.]+)', text)
-    long_term = re.search(r'Long-term loan \(mn\)\s*([\d,\.]+)', text)
+    short_term = re.search(r'Short-term loan \(mn\)\s*(-|[\d,\.]+)', text)
+    long_term = re.search(r'Long-term loan \(mn\)\s*(-|[\d,\.]+)', text)
+    if not short_term and not long_term:
+        return None
     total_debt_mn = (_to_float(short_term.group(1)) if short_term else 0.0) + \
                     (_to_float(long_term.group(1)) if long_term else 0.0)
     market_cap_mn = price * shares / 1_000_000
-    return total_debt_mn / market_cap_mn if market_cap_mn > 0 else 0.0
+    if market_cap_mn <= 0:
+        return None
+    return total_debt_mn / market_cap_mn
 
 def get_stock_data(symbol):
     url = f"https://dsebd.org/displayCompany.php?name={symbol}"
@@ -144,16 +150,27 @@ def get_stock_data(symbol):
         # Share of earnings paid out as cash. Undefined (0.0) when EPS <= 0.
         payout_ratio = (cash_per_share / eps) * 100 if eps > 0 else 0.0
 
-        return Stock(symbol, sector, price, round(debt_ratio, 3), pe, eps, nav,
+        # Keep debt_ratio unrounded: filter_halal compares it to the 30% limit, and
+        # rounding first would let e.g. 0.3004 pass as 0.300. Round only for display.
+        return Stock(symbol, sector, price, debt_ratio, pe, eps, nav,
                      round(dividend_yield, 4), round(earnings_yield, 2),
                      round(payout_ratio, 1))
     except Exception:
         return None
 
+# AAOIFI Shariah Standard No. 21: interest-bearing debt must not exceed 30% of market cap.
+MAX_DEBT_TO_MARKET_CAP = 0.30
+
+# Core businesses that are impermissible regardless of financial ratios. DSE lists
+# conventional insurers under "Insurance" (AAOIFI permits only takaful).
+HARAM_SECTORS = {"Tobacco", "Bank", "Financial", "Mutual Funds", "Insurance"}
+
 def filter_halal(stocks, min_cfo=None):
-    haram_sectors = {"Tobacco", "Bank", "Financial", "Mutual Funds"}
     result = [s for s in stocks
-              if not any(h in s.sector for h in haram_sectors) and s.debt_ratio < 0.33]
+              if not any(h in s.sector for h in HARAM_SECTORS)
+              # None = ratio unknown; fail closed rather than assume no debt.
+              and s.debt_ratio is not None
+              and s.debt_ratio <= MAX_DEBT_TO_MARKET_CAP]
     if min_cfo is not None:
         result = [s for s in result if s.cfo >= min_cfo]
     return result

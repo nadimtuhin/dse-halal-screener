@@ -1,12 +1,12 @@
 import unittest
 import subprocess
 import json
-import os
+import sys
 
 class TestHalalScreenerCLI(unittest.TestCase):
     def test_cli_helps(self):
         result = subprocess.run(
-            ["python3", "dse_halal_screener/cli.py", "--help"],
+            [sys.executable, "dse_halal_screener/cli.py", "--help"],
             capture_output=True, text=True
         )
         self.assertEqual(result.returncode, 0)
@@ -16,7 +16,7 @@ class TestHalalScreenerCLI(unittest.TestCase):
         # We will mock the DSE scrape for testing or use offline database
         # Test runs CLI with sample/mock values
         result = subprocess.run(
-            ["python3", "dse_halal_screener/cli.py", "--pe", "15", "--min-cf", "0", "--mock"],
+            [sys.executable, "dse_halal_screener/cli.py", "--pe", "15", "--min-cf", "0", "--mock"],
             capture_output=True, text=True
         )
         self.assertEqual(result.returncode, 0)
