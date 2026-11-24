@@ -70,6 +70,9 @@ def main():
     results = [s for s in filtered if 0 < s.pe <= args.pe]
 
     for s in results:
+        # Screening is done on the exact ratio above; round only for display.
+        if s.debt_ratio is not None:
+            s.debt_ratio = round(s.debt_ratio, 3)
         s.dividend_yield = f"{s.dividend_yield}%"
         s.earnings_yield = f"{s.earnings_yield}%"
 

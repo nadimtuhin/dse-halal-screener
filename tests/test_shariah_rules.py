@@ -4,7 +4,8 @@ import pathlib
 import yaml
 from bs4 import BeautifulSoup
 
-from dse_halal_screener.screener import Stock, _debt_ratio, filter_halal
+from dse_halal_screener import screener
+from dse_halal_screener.screener import MAX_DEBT_TO_MARKET_CAP, Stock, _debt_ratio, filter_halal
 
 
 def _soup(body):
@@ -74,3 +75,26 @@ def test_ci_lint_step_does_not_ignore_failures():
         for step in job["steps"]:
             run = step.get("run", "")
             assert "|| true" not in run, f"step {step.get('name')!r} hides failures"
+
+
+# --- the 30% limit is applied to the exact ratio, not a rounded one ----------
+
+COMPANY_PAGE = (
+    "<table><tr><td>Sector</td><td>Cement</td></tr>"
+    "<tr><td>Closing Price</td><td>100.0</td></tr>"
+    "<tr><td>Total No. of Outstanding Securities</td><td>1,000,000</td></tr>"
+    "<tr><td>Current P/E Ratio using Basic EPS</td><td>10.0</td></tr>"
+    "<tr><td>Short-term loan (mn)</td><td>{st}</td></tr>"
+    "<tr><td>Long-term loan (mn)</td><td>0.0</td></tr></table>"
+)
+
+
+def test_debt_ratio_just_above_30_percent_is_not_rounded_into_a_pass(monkeypatch):
+    # 30.04mn debt / 100mn market cap = 30.04%, which exceeds the AAOIFI 30% limit
+    # but rounds to 0.300 at three decimals.
+    monkeypatch.setattr(screener, "_fetch_html",
+                        lambda url: f"<html><body>{COMPANY_PAGE.format(st='30.04')}</body></html>")
+    stock = screener.get_stock_data("LEV3004")
+    assert stock is not None
+    assert stock.debt_ratio > MAX_DEBT_TO_MARKET_CAP
+    assert filter_halal([stock]) == []

@@ -150,9 +150,9 @@ def get_stock_data(symbol):
         # Share of earnings paid out as cash. Undefined (0.0) when EPS <= 0.
         payout_ratio = (cash_per_share / eps) * 100 if eps > 0 else 0.0
 
-        return Stock(symbol, sector, price,
-                     round(debt_ratio, 3) if debt_ratio is not None else None,
-                     pe, eps, nav,
+        # Keep debt_ratio unrounded: filter_halal compares it to the 30% limit, and
+        # rounding first would let e.g. 0.3004 pass as 0.300. Round only for display.
+        return Stock(symbol, sector, price, debt_ratio, pe, eps, nav,
                      round(dividend_yield, 4), round(earnings_yield, 2),
                      round(payout_ratio, 1))
     except Exception:
